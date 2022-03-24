@@ -173,9 +173,9 @@ class MultivariateGaussian:
         """
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `pdf` function")
-        d = X.shape[0]
+        d = X.shape[1]
         fraction_val = np.sqrt(((2*np.pi)**d)*det(self.cov_))
-        exp_val = np.exp((np.transpose(X-self.mu_) @ inv(self.cov_) @ (X-self.mu_))/(-2))
+        exp_val = np.array([np.exp((np.transpose(x) @ inv(self.cov_) @ (x))/(-2)) for x in (X-self.mu_)])
         return exp_val/fraction_val
 
 

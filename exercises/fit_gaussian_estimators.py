@@ -73,3 +73,4 @@ if __name__ == '__main__':
     np.random.seed(0)
     test_univariate_gaussian()
     test_multivariate_gaussian()
+
