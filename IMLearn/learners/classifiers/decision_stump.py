@@ -39,7 +39,15 @@ class DecisionStump(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        raise NotImplementedError()
+        min_err = 1
+        for feature in range(X.shape[1]):
+            for sign in {-1, 1}:
+                threshold, curr_err = self._find_threshold(X[:, feature], y, sign)
+                if curr_err < min_err:
+                    min_err = curr_err
+                    self.threshold_ = threshold
+                    self.j_ = feature
+                    self.sign_ = sign
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -63,7 +71,8 @@ class DecisionStump(BaseEstimator):
         Feature values strictly below threshold are predicted as `-sign` whereas values which equal
         to or above the threshold are predicted as `sign`
         """
-        raise NotImplementedError()
+        test_feature_array = X[:, self.j_]
+        return np.array([-self.sign_ if sample < self.threshold_ else self.sign_ for sample in test_feature_array])
 
     def _find_threshold(self, values: np.ndarray, labels: np.ndarray, sign: int) -> Tuple[float, float]:
         """
@@ -95,7 +104,32 @@ class DecisionStump(BaseEstimator):
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
-        raise NotImplementedError()
+        # todo: fix function!!
+        sorted_values = np.sort(values)
+        indices = np.argsort(values)
+        sorted_labels = np.take(labels, indices)
+        loss = []
+        res = np.ones(len(labels)) * sign
+        loss.append(np.sum(np.where((res * -sign) != np.sign(sorted_labels),
+                                    np.abs(sorted_labels), 0)))
+        loss.append(np.sum(
+            np.where(res != np.sign(sorted_labels), np.abs(sorted_labels), 0)))
+        i = 0
+        un = np.unique(sorted_values)
+        for v in un:
+            while i < len(sorted_values) and sorted_values[i] == v:
+                res[i] = -sign
+                i += 1
+            loss.append(np.sum(
+                np.where(res != np.sign(sorted_labels), np.abs(sorted_labels),
+                         0)))
+        idx = np.argmin(np.array(loss))
+        if idx > 1:
+            return un[idx - 2], loss[idx] / len(sorted_labels)
+        if idx == 1:
+            return un[-1] + 1, loss[idx] / len(sorted_labels)
+        if idx == 0:
+            return un[0] - 1, loss[idx] / len(sorted_labels)
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
