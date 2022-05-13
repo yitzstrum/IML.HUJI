@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Tuple, NoReturn
+import IMLearn
 from ...base import BaseEstimator
 import numpy as np
 from itertools import product
@@ -148,4 +149,4 @@ class DecisionStump(BaseEstimator):
         loss : float
             Performance under missclassification loss function
         """
-        raise NotImplementedError()
+        return IMLearn.metrics.misclassification_error(y, self._predict(X))
