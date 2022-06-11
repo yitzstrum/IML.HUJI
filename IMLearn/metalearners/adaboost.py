@@ -1,7 +1,7 @@
 import numpy as np
 from ..base import BaseEstimator
 from typing import Callable, NoReturn
-import IMLearn
+from IMLearn import metrics
 
 
 class AdaBoost(BaseEstimator):
@@ -52,8 +52,9 @@ class AdaBoost(BaseEstimator):
         self.D_ = np.ones(len(X)) / len(X)
         self.weights_ = []
         self.models_ = []
-        estimator = self.wl_()
         for i in range(self.iterations_):
+            print(i)
+            estimator = self.wl_()
             estimator.fit(X, y * self.D_)
             y_predict = estimator.predict(X)
             epsilon_t = np.sum(self.D_ * (y != y_predict))
@@ -120,7 +121,10 @@ class AdaBoost(BaseEstimator):
             iterations = T
         else:
             iterations = self.iterations_
-        return np.sign(sum(self.models_[t].predict(X) * self.weights_[t] for t in range(iterations)))
+        predict = np.zeros(X.shape[0])
+        for t in range(iterations):
+            predict += self.models_[t].predict(X) * self.weights_[t]
+        return np.sign(predict)
 
     def partial_loss(self, X: np.ndarray, y: np.ndarray, T: int) -> float:
         """
@@ -146,4 +150,4 @@ class AdaBoost(BaseEstimator):
             iterations = T
         else:
             iterations = self.iterations_
-        return IMLearn.metrics.misclassification_error(self.partial_predict(X, iterations), np.sign(y))
+        return metrics.misclassification_error(np.sign(y), self.partial_predict(X, iterations))

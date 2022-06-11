@@ -105,32 +105,21 @@ class DecisionStump(BaseEstimator):
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
-        # todo: fix function!!
         sorted_values = np.sort(values)
-        indices = np.argsort(values)
-        sorted_labels = np.take(labels, indices)
-        loss = []
+        indexes = np.argsort(values)
+        sorted_labels = np.take(labels, indexes)
         res = np.ones(len(labels)) * sign
-        loss.append(np.sum(np.where((res * -sign) != np.sign(sorted_labels),
-                                    np.abs(sorted_labels), 0)))
-        loss.append(np.sum(
-            np.where(res != np.sign(sorted_labels), np.abs(sorted_labels), 0)))
-        i = 0
-        un = np.unique(sorted_values)
-        for v in un:
-            while i < len(sorted_values) and sorted_values[i] == v:
-                res[i] = -sign
-                i += 1
-            loss.append(np.sum(
-                np.where(res != np.sign(sorted_labels), np.abs(sorted_labels),
-                         0)))
-        idx = np.argmin(np.array(loss))
-        if idx > 1:
-            return un[idx - 2], loss[idx] / len(sorted_labels)
-        if idx == 1:
-            return un[-1] + 1, loss[idx] / len(sorted_labels)
-        if idx == 0:
-            return un[0] - 1, loss[idx] / len(sorted_labels)
+        min_err = 1
+        threshold = 0
+        for iteration in range(sorted_values.shape[0]):
+            curr_err = np.sum(np.where(res != np.sign(sorted_labels),
+                                    np.abs(sorted_labels), 0)) / len(sorted_values)
+            if curr_err < min_err:
+                min_err = curr_err
+                threshold = sorted_values[iteration]
+
+            res[iteration] = -sign
+        return threshold, min_err
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
